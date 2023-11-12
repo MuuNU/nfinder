@@ -7,39 +7,21 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <header>
-    <nav>
-        <button onclick="?asd">
-            qweqwe
-        </button>
-    </nav>
+<br>
+    <form action="?get_search" method="get">
+        <input type="text" name="search" placeholder="Введите значение">
+        <input type="submit" value="Поиск">
+    </form>
 </header>
 <main>
+    {{ range . }}
+        <a class="button" href="https://example.com">{{ .Source.Title.Default }}</a>
+        <md>
+{{ .Source.Content.Default }}
+        </md>
+        <br>
+    {{ end }}
 
-    <div class="row" style="display: flex;">
-        <div class="column" style="flex: 50%;">
-            <form action="?get_search" method="get">
-                <input type="text" name="search" placeholder="Введите значение">
-                <input type="submit" value="Поиск">
-            </form>
-            <p>
-                <a class="button" href="https://example.com">I'm a button with a link</a>
-            </p>
-            <br>
-            <br>
-            <a href="?note=123">123</a>
-            <br>
-            <a href="?note=123">123</a>
-            <br>
-
-        </div>
-        <div class="column" style="flex: 50%;">
-            <md>
-                # qweqe
-                ## asdasd
-            </md>
-
-        </div>
-    </div>
 </main>
 
 

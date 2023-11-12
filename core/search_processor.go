@@ -106,12 +106,12 @@ type Multimatch struct {
 	} `json:"query"`
 }
 
-func (receiver SearchProcessor) Run() Document {
+func (receiver SearchProcessor) Run() []Hits {
 
 	var arr []string
 	var query string
 	var jsonData []byte
-	var doc Document
+	var response Response
 	if receiver.searchType == "match" {
 		for i, _ := range receiver.searchFields {
 			if i >= 1 {
@@ -130,14 +130,17 @@ func (receiver SearchProcessor) Run() Document {
 		jsonData, _ = json.Marshal(query)
 	}
 
+	// TODO: Проверить и исправить баг с множеством индексов (По какой-то причине, ищется в другом индексе)
 	respRaw, _ := receiver.client.Search(
 		receiver.client.Search.WithIndex(receiver.searchIndex),
 		receiver.client.Search.WithPretty(),
 		receiver.client.Search.WithSource(arr...),
 		receiver.client.Search.WithBody(bytes.NewReader(jsonData)),
 	)
-	responce, _ := io.ReadAll(respRaw.Body)
-	json.Unmarshal([]byte(responce), &doc)
-	return doc
+	responceStr, _ := io.ReadAll(respRaw.Body)
+	print(string(responceStr))
+	json.Unmarshal([]byte(responceStr), &response)
+
+	return response.HitsInfo.Hits
 
 }
