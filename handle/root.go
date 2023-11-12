@@ -8,16 +8,21 @@ import (
 )
 
 var (
-	elasticConfig      = elasticsearch.Config{Addresses: []string{"http://localhost:9200"}}
-	elasticClient, err = elasticsearch.NewClient(elasticConfig)
+	elasticConfig    = elasticsearch.Config{Addresses: []string{"http://localhost:9200"}}
+	elasticClient, _ = elasticsearch.NewClient(elasticConfig)
 )
 
 func HandlerMain(w http.ResponseWriter, r *http.Request) {
+	print(r)
 	processor := core.NewSearchProcessor(elasticClient)
 	processor.SetSearchIndex("note-test")
-	processor.SetSearchType("test")
-	processor.SetSearchFields("test", "tes2", "test3")
-	processor.Run()
+	processor.SetSearchType("match")
+	processor.SetSearchFields("content.en", "content.ru")
+	processor.SetSearchArg("сосать")
+	doc := processor.Run()
 	ts, _ := template.ParseFiles("./templates/index.html")
-	ts.Execute(w, "")
+	err := ts.Execute(w, doc)
+	if err != nil {
+		return
+	}
 }

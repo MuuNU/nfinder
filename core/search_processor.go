@@ -1,10 +1,11 @@
 package core
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
 	"github.com/elastic/go-elasticsearch/v8"
+	"io"
 	"log"
-	"strings"
 )
 
 type SearchInterface interface {
@@ -88,10 +89,29 @@ func (receiver SearchProcessor) SetFuzzinessCount(arg int) {
 	receiver.fuzzinesscount = arg
 }
 
+type Match struct {
+	Query struct {
+		Match struct {
+			NoteID string `json:"note_id"`
+		} `json:"match"`
+	} `json:"query"`
+}
+
+type Multimatch struct {
+	Query struct {
+		MultiMatch struct {
+			Query  string   `json:"query"`
+			Fields []string `json:"fields"`
+		} `json:"multi_match"`
+	} `json:"query"`
+}
+
 func (receiver SearchProcessor) Run() Document {
 
 	var arr []string
 	var query string
+	var jsonData []byte
+	var doc Document
 	if receiver.searchType == "match" {
 		for i, _ := range receiver.searchFields {
 			if i >= 1 {
@@ -99,46 +119,25 @@ func (receiver SearchProcessor) Run() Document {
 					"but got more than one fields in in searchFields")
 			}
 		}
-		query = fmt.Sprintf(`{ 
-			"query": { 
-				"match": { 
-					"%s": "%s"
-				} 
-			} 
-		}`, receiver.searchFields, receiver.searchArg[0])
+		var q Match
+		q.Query.Match.NoteID = receiver.searchFields[0]
+		jsonData, _ = json.Marshal(query)
+
 	} else if receiver.searchType == "multimatch" {
-		fields := ""
-		for i, e := range receiver.searchFields {
-			if i == 0 {
-				fields = fields + "\"" + e + "\""
-			} else {
-				fields = fields + "," + "\"" + e + "\""
-			}
-		}
-		qstr := fmt.Sprintf("\"query\": %s", receiver.searchArg)
-		fstr := fmt.Sprintf("\"fields\": [%s]", fields)
-		query = fmt.Sprintf(`
-			{
-			  "query": {
-				"multi_match": {
-				%s,
-				%s
-				}
-			  }, 
-			}`, qstr, fstr)
-	}
-	if receiver.searchType == "title" {
-		arr = append(arr,
-			"title.default",
-			"title.en",
-			"title.ru",
-		)
+		var q Multimatch
+		q.Query.MultiMatch.Fields = receiver.searchFields
+		q.Query.MultiMatch.Query = receiver.searchArg
+		jsonData, _ = json.Marshal(query)
 	}
 
-	receiver.client.Search(
+	respRaw, _ := receiver.client.Search(
 		receiver.client.Search.WithIndex(receiver.searchIndex),
 		receiver.client.Search.WithPretty(),
 		receiver.client.Search.WithSource(arr...),
-		receiver.client.Search.WithBody(strings.NewReader(query)),
+		receiver.client.Search.WithBody(bytes.NewReader(jsonData)),
 	)
+	responce, _ := io.ReadAll(respRaw.Body)
+	json.Unmarshal([]byte(responce), &doc)
+	return doc
+
 }
