@@ -15,7 +15,7 @@
 </header>
 <main>
     {{ range . }}
-        <a class="button" href="https://example.com">{{ .Source.Title.Default }}</a>
+        <a class="button" href="/search?note={{ .Source.NoteID }}">{{ .Source.Title.Default }}</a>
         <md>
 {{ .Source.Content.Default }}
         </md>

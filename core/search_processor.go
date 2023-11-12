@@ -8,19 +8,21 @@ import (
 	"log"
 )
 
-type SearchInterface interface {
-	SetSearchIndex(arg string)
-	SetSearchArg(arg string)
-	SetSearchType(arg string)
-	SetSearchFields(arg ...string)
-	SetPaginationEnabled(arg bool)
-	SetPaginationCount(arg int)
-	SetAnalyzerEnabled(arg bool)
-	SetAnalyzerType(arg string)
-	SetFuzzinessEnabled(arg bool)
-	SetFuzzinessCount(arg int)
-	Run()
-}
+type (
+	SearchInterface interface {
+		SetSearchIndex(arg string)
+		SetSearchArg(arg string)
+		SetSearchType(arg string)
+		SetSearchFields(arg ...string)
+		SetPaginationEnabled(arg bool)
+		SetPaginationCount(arg int)
+		SetAnalyzerEnabled(arg bool)
+		SetAnalyzerType(arg string)
+		SetFuzzinessEnabled(arg bool)
+		SetFuzzinessCount(arg int)
+		Run()
+	}
+)
 type SearchProcessor struct {
 	client       *elasticsearch.Client
 	searchIndex  string
@@ -54,38 +56,39 @@ func NewSearchProcessor(client *elasticsearch.Client) *SearchProcessor {
 	return sp
 }
 
-func (receiver SearchProcessor) SetSearchIndex(arg string) {
+func (receiver *SearchProcessor) SetSearchIndex(arg string) {
 	receiver.searchIndex = arg
 }
-func (receiver SearchProcessor) SetSearchArg(arg string) {
+func (receiver *SearchProcessor) SetSearchArg(arg string) {
 	receiver.searchArg = arg
 }
-func (receiver SearchProcessor) SetSearchType(arg string) {
+func (receiver *SearchProcessor) SetSearchType(arg string) {
 	receiver.searchType = arg
+
 }
-func (receiver SearchProcessor) SetSearchFields(arg ...string) {
+func (receiver *SearchProcessor) SetSearchFields(arg ...string) {
 
 	for _, e := range arg {
 		receiver.searchFields = append(receiver.searchFields, e)
 	}
 
 }
-func (receiver SearchProcessor) SetPaginationEnabled(arg bool) {
+func (receiver *SearchProcessor) SetPaginationEnabled(arg bool) {
 	receiver.paginationenabled = arg
 }
-func (receiver SearchProcessor) SetPaginationCount(arg int) {
+func (receiver *SearchProcessor) SetPaginationCount(arg int) {
 	receiver.paginationcount = arg
 }
-func (receiver SearchProcessor) SetAnalyzerEnabled(arg bool) {
+func (receiver *SearchProcessor) SetAnalyzerEnabled(arg bool) {
 	receiver.analyzerenabled = arg
 }
-func (receiver SearchProcessor) SetAnalyzerType(arg string) {
+func (receiver *SearchProcessor) SetAnalyzerType(arg string) {
 	receiver.analyzertype = arg
 }
-func (receiver SearchProcessor) SetFuzzinessEnabled(arg bool) {
+func (receiver *SearchProcessor) SetFuzzinessEnabled(arg bool) {
 	receiver.fuzzinessenabled = arg
 }
-func (receiver SearchProcessor) SetFuzzinessCount(arg int) {
+func (receiver *SearchProcessor) SetFuzzinessCount(arg int) {
 	receiver.fuzzinesscount = arg
 }
 
@@ -109,10 +112,15 @@ type Multimatch struct {
 func (receiver SearchProcessor) Run() []Hits {
 
 	var arr []string
-	var query string
+	//var query string
 	var jsonData []byte
 	var response Response
+	//var respRaw *esapi.Response
+	if receiver.searchType == "all" {
+		jsonData = []byte("")
+	}
 	if receiver.searchType == "match" {
+
 		for i, _ := range receiver.searchFields {
 			if i >= 1 {
 				log.Fatal("Error in processing query. Selected type \"Match\", " +
@@ -120,17 +128,16 @@ func (receiver SearchProcessor) Run() []Hits {
 			}
 		}
 		var q Match
-		q.Query.Match.NoteID = receiver.searchFields[0]
-		jsonData, _ = json.Marshal(query)
+		q.Query.Match.NoteID = receiver.searchArg
+		jsonData, _ = json.Marshal(q)
 
-	} else if receiver.searchType == "multimatch" {
+	}
+	if receiver.searchType == "multimatch" {
 		var q Multimatch
 		q.Query.MultiMatch.Fields = receiver.searchFields
 		q.Query.MultiMatch.Query = receiver.searchArg
-		jsonData, _ = json.Marshal(query)
+		jsonData, _ = json.Marshal(q)
 	}
-
-	// TODO: Проверить и исправить баг с множеством индексов (По какой-то причине, ищется в другом индексе)
 	respRaw, _ := receiver.client.Search(
 		receiver.client.Search.WithIndex(receiver.searchIndex),
 		receiver.client.Search.WithPretty(),
@@ -139,7 +146,7 @@ func (receiver SearchProcessor) Run() []Hits {
 	)
 	responceStr, _ := io.ReadAll(respRaw.Body)
 	print(string(responceStr))
-	json.Unmarshal([]byte(responceStr), &response)
+	json.Unmarshal(responceStr, &response)
 
 	return response.HitsInfo.Hits
 
