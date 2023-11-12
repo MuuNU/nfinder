@@ -1,0 +1,34 @@
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simply Docs Demo | Home</title>
+    <meta name="description" content="A showcase of Simply Docs by MarketingPipeline built using Simple.CSS">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<header>
+<br>
+    <form action="?get_search" method="get">
+        <input type="text" name="search" placeholder="Введите значение">
+        <input type="submit" value="Поиск">
+    </form>
+</header>
+<main>
+    {{ range . }}
+        <a class="button" href="/search?note={{ .Source.NoteID }}">{{ .Source.Title.Default }}</a>
+        <md>
+{{ .Source.Content.Default }}
+        </md>
+        <br>
+    {{ end }}
+
+</main>
+
+
+<footer>
+    <p>Simply Docs was created by <a href="https://github.com/MarketingPipeline/">Marketing Pipeline</a> and is licensed under the MIT license.</p>
+    <small>© 2014 Some company name</small>
+    <address>email@email.com</address>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/gh/MarketingPipeline/Markdown-Tag/markdown-tag.js"></script>
